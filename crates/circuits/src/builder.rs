@@ -119,33 +119,31 @@ impl CircuitBuilder {
     /// # Returns
     ///
     /// The outputs of the gate.
-    pub fn add_xor_gates(&mut self, xy: &[(Node<Feed>, Node<Feed>)]) -> Vec<Node<Feed>> {
+    pub fn add_xor_gates<I>(&mut self, xy: I) -> Vec<Node<Feed>> 
+    where I: Iterator<Item = (Node<Feed>, Node<Feed>)>{
         // if either input is a constant, we can simplify the gate
-        let mut nodes = Vec::with_capacity(xy.len());
-        for (x, y) in xy {
-            let out = if x.id() == y.id() {
+        xy.map(|(x, y)|
+            if x.id() == y.id() {
                 self.get_const_zero()
             } else if x.id() == 0 {
-                *y
+                y
             } else if y.id() == 0 {
-                *x
+                x
             } else if x.id() == 1 {
                 let out = self.add_feed();
-                self.gates.push(Gate::Inv { x: (*y).into(), z: out });
+                self.gates.push(Gate::Inv { x: y.into(), z: out });
                 out
             } else if y.id() == 1 {
                 let out = self.add_feed();
-                self.gates.push(Gate::Inv { x: (*x).into(), z: out });
+                self.gates.push(Gate::Inv { x: x.into(), z: out });
                 out
             } else {
                 let out = self.add_feed();
                 self.xor_count += 1;
-                self.gates.push(Gate::Xor { x: (*x).into(), y: (*y).into(), z: out });
+                self.gates.push(Gate::Xor { x: x.into(), y: y.into(), z: out });
                 out
-            };
-            nodes.push(out);
-        }
-        nodes
+            }
+        ).collect()
     }
 
     /// Adds an AND gate to the circuit.
